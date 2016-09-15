@@ -5,6 +5,11 @@
 #include <system_stm32f4xx.h>
 #include <stm32f4xx_hal.h>
 
+#include <mprotocol-server/ProtocolParser.h>
+#include <mprotocol-server/StdioSerialInterface.h>
+#include <mprotocol-nodes/RootNode.h>
+#include "LedNode.h"
+
 int main() {
   // Send a greeting to the trace device (skipped on Release).
   trace_puts("Hello ARM World!");
@@ -13,7 +18,32 @@ int main() {
   // at high speed.
   trace_printf("System clock: %u Hz\n", SystemCoreClock);
 
-  while(1);
+  // All debug led's are on GPIOD
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+
+  RootNode* root = RootNode::getInstance();
+  LedNode* led;
+
+  led = new LedNode(LedNode::LedType_Green);
+  led->init();
+  root->addChild(led);
+  led = new LedNode(LedNode::LedType_Orange);
+  led->init();
+  root->addChild(led);
+  led = new LedNode(LedNode::LedType_Red);
+  led->init();
+  root->addChild(led);
+  led = new LedNode(LedNode::LedType_Blue);
+  led->init();
+  root->addChild(led);
+
+  AbstractSerialInterface* serialInterface = new StdioSerialInterface();
+  ProtocolParser* pparser = new ProtocolParser(serialInterface);
+
+  serialInterface->listen();
+
+  delete pparser;
+  delete serialInterface;
 
   return 0;
 }

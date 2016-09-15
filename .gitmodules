@@ -1,0 +1,6 @@
+[submodule "modules/mprotocol-server"]
+	path = modules/mprotocol-server
+	url = git@github.com:majorpeter/mprotocol-server.git
+[submodule "modules/mprotocol-nodes"]
+	path = modules/mprotocol-nodes
+	url = git@github.com:majorpeter/mprotocol-nodes.git
