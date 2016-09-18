@@ -23,7 +23,8 @@ PROP_ARRAY(props) = {
 		PROP_ADDRESS(TimerNode, Pulse4)
 };
 
-TimerNode::TimerNode(const char* name, TIM_TypeDef* timer): Node(name) {
+TimerNode::TimerNode(const char* name, TIM_TypeDef* timer):
+		Node(name, "Interface to control an STM32 TIM periphery.") {
 	this->timer.Instance = timer;
 	NODE_SET_PROPS(props);
 }

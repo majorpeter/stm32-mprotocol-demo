@@ -28,7 +28,8 @@ PROP_ARRAY(props) = {
 		PROP_ADDRESS(LedNode, Pwm)
 };
 
-LedNode::LedNode(LedType type, PwmInterface* pwm): Node(ledNames[type]) {
+LedNode::LedNode(LedType type, PwmInterface* pwm):
+		Node(ledNames[type], "PWM controller for the Discovery board's LED's.") {
 	this->gpio_port = ledPorts[type];
 	this->gpio_pin = ledPins[type];
 	this->pwm = pwm;
@@ -60,6 +61,7 @@ ProtocolResult_t LedNode::getEnabled(bool* dest) const {
 
 ProtocolResult_t LedNode::setEnabled(const bool value) {
 	pwm->setPwmPercent(value ? 100 : 0);
+	this->invalidateProperty(&prop_Pwm);
 	return ProtocolResult_Ok;
 }
 
