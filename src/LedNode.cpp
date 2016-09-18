@@ -6,6 +6,7 @@
  */
 
 #include "LedNode.h"
+#include "PwmInterface.h"
 
 static const char* ledNames[] = {
 		"GREEN", "ORANGE", "RED", "BLUE"
@@ -20,23 +21,32 @@ uint16_t ledPins[] = {
 };
 
 MK_PROP_BOOL_RW(LedNode, Enabled, "LED is On or Off.");
+MK_PROP_UINT32_RW(LedNode, Pwm, "PWM pulse width for this LED.");
 
 PROP_ARRAY(props) = {
 		PROP_ADDRESS(LedNode, Enabled),
+		PROP_ADDRESS(LedNode, Pwm)
 };
 
-LedNode::LedNode(LedType type): Node(ledNames[type]) {
+LedNode::LedNode(LedType type, PwmInterface* pwm): Node(ledNames[type]) {
 	this->gpio_port = ledPorts[type];
 	this->gpio_pin = ledPins[type];
+	this->pwm = pwm;
 	NODE_SET_PROPS(props);
 }
 
 LedNode::~LedNode() {
 }
 
-void LedNode::init() {
+void LedNode::globalInit() {
+	// All debug led's are on GPIOD on the STM32F4 Discovery board
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+}
+
+void LedNode::init(uint32_t alternateFunction) {
 	GPIO_InitTypeDef GPIO_InitStruct;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Alternate = alternateFunction;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
 	GPIO_InitStruct.Pin = this->gpio_pin;
@@ -44,12 +54,26 @@ void LedNode::init() {
 }
 
 ProtocolResult_t LedNode::getEnabled(bool* dest) const {
-	GPIO_PinState state = HAL_GPIO_ReadPin(this->gpio_port, this->gpio_pin);
-	*dest = (state == GPIO_PIN_SET);
+	*dest = (pwm->getPwmPercent() > 0);
 	return ProtocolResult_Ok;
 }
 
 ProtocolResult_t LedNode::setEnabled(const bool value) {
-	HAL_GPIO_WritePin(this->gpio_port, this->gpio_pin, value ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	pwm->setPwmPercent(value ? 100 : 0);
+	return ProtocolResult_Ok;
+}
+
+ProtocolResult_t LedNode::getPwm(uint32_t* dest) const {
+	*dest = pwm->getPwmPercent();
+	return ProtocolResult_Ok;
+}
+
+ProtocolResult_t LedNode::setPwm(uint32_t value) {
+	uint8_t origValue = pwm->getPwmPercent();
+	pwm->setPwmPercent(value);
+
+	if ((origValue == 0 && value != 0) || (origValue != 0 && value == 0)) {
+		this->invalidateProperty(&prop_Enabled);
+	}
 	return ProtocolResult_Ok;
 }

@@ -9,6 +9,7 @@
 #include <mprotocol-server/StdioSerialInterface.h>
 #include <mprotocol-nodes/RootNode.h>
 #include "LedNode.h"
+#include "TimerNode.h"
 
 int main() {
   // Send a greeting to the trace device (skipped on Release).
@@ -18,23 +19,27 @@ int main() {
   // at high speed.
   trace_printf("System clock: %u Hz\n", SystemCoreClock);
 
-  // All debug led's are on GPIOD
-  __HAL_RCC_GPIOD_CLK_ENABLE();
+  LedNode::globalInit();
 
   RootNode* root = RootNode::getInstance();
   LedNode* led;
 
-  led = new LedNode(LedNode::LedType_Green);
-  led->init();
+  __HAL_RCC_TIM4_CLK_ENABLE();
+  TimerNode* tim4 = new TimerNode("TIM4", TIM4);
+  tim4->init();
+  root->addChild(tim4);
+
+  led = new LedNode(LedNode::LedType_Green, tim4->getChannel(0));
+  led->init(GPIO_AF2_TIM4);
   root->addChild(led);
-  led = new LedNode(LedNode::LedType_Orange);
-  led->init();
+  led = new LedNode(LedNode::LedType_Orange, tim4->getChannel(1));
+  led->init(GPIO_AF2_TIM4);
   root->addChild(led);
-  led = new LedNode(LedNode::LedType_Red);
-  led->init();
+  led = new LedNode(LedNode::LedType_Red, tim4->getChannel(2));
+  led->init(GPIO_AF2_TIM4);
   root->addChild(led);
-  led = new LedNode(LedNode::LedType_Blue);
-  led->init();
+  led = new LedNode(LedNode::LedType_Blue, tim4->getChannel(3));
+  led->init(GPIO_AF2_TIM4);
   root->addChild(led);
 
   AbstractSerialInterface* serialInterface = new StdioSerialInterface();

@@ -11,6 +11,8 @@
 #include <mprotocol-nodes/Node.h>
 #include <stm32f4xx_hal.h>
 
+class PwmInterface;
+
 class LedNode: public Node {
 public:
 	enum LedType {
@@ -20,15 +22,18 @@ public:
 		LedType_Blue
 	};
 
-	LedNode(LedType type);
+	LedNode(LedType type, PwmInterface* pwm);
 	virtual ~LedNode();
 
-	void init();
+	static void globalInit();
+	void init(uint32_t alternateFunction);
 
 	DECLARE_PROP_BOOL_RW(Enabled);
+	DECLARE_PROP_UINT32_RW(Pwm);
 private:
 	GPIO_TypeDef* gpio_port;
 	uint16_t gpio_pin;
+	PwmInterface* pwm;
 };
 
 #endif /* LEDNODE_H_ */
